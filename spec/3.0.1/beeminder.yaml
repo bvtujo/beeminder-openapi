@@ -60,6 +60,7 @@ paths:
           schema:
             type: string
           description: The username of the user to fetch goals from.
+          required: true
       responses:
         '200':
           description: OK
@@ -77,6 +78,7 @@ paths:
           schema:
             type: string
           description: The username of the user to fetch goals from.
+          required: true
       requestBody:
         required: true
         content:
@@ -100,6 +102,7 @@ paths:
           schema:
             type: string
           description: The username of the user to fetch goals from.
+          required: true
       responses:
         '200':
           description: OK
@@ -365,22 +368,24 @@ paths:
     put:
       summary: Update the datapoint with id.
       parameters:
-          - in: path
-            name: userId
-            schema:
-              type: string
-            required: true
-            description: User ID.
-          - in: path
-            name: goalSlug
-            schema:
-              type: string
-            required: true
-            description: Name of the goal.
-          - in: path
-            name: datapointId
-            required: true
-            description: ID of the datapoint to edit.
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal.
+        - in: path
+          name: datapointId
+          required: true
+          description: ID of the datapoint to edit.
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -415,6 +420,8 @@ paths:
           name: datapointId
           required: true
           description: ID of the datapoint to edit.
+          schema:
+            type: string
       responses:
         200:
           description: Ok
@@ -506,16 +513,13 @@ components:
       type: object
       properties:
         slug:
-          required: true
           type: string
           example: rapid
           description: The final part of the URL of the goal, used as an identifier.
         title:
-          required: true
           type: string
           example: play at least one game of rapid chess a day.
         goal_type:
-          required: true
           type: string
           enum:
             - hustler
@@ -528,7 +532,6 @@ components:
         gunits:
           type: string
           description: Goal units, like "hours" or "pushups" or "pages".
-          required: true
         goaldate:
           type: number
           nullable: true
@@ -544,53 +547,45 @@ components:
         initval:
           type: number
           description: The y-value of the start of the bright red line.
-          required: true
         secret:
           type: boolean
           description: Whether you have to be logged in as owner of the goal to view it.
           default: false
-          required: false
+          nullable: true
         datapublic:
           type: boolean
           description: Whether you have to be logged in as the owner of the goal to view the datapoints
-          required: false
+          nullable: true
         datasource:
           type: string
-          required: false
           default: manual
           description: 'one of {"api", "ifttt", "zapier", or clientname}. Default: none (i.e., "manual").'
+          nullable: true
         dryrun:
           type: boolean
           default: false
           description: Pass this to test the endpoint without actually creating a goal. Defaults to false.
+          nullable: true
         tags:
           type: array
           items:
             type: string
-          required: false
     GoalUpdateRequest:
       type: object
       properties:
         title:
           type: string
-          required: false
         yaxis:
           type: string
-          required: false
         tmin:
           type: string
-          required: false
         tmax:
           type: string
-          required: false
         secret:
           type: boolean
-          required: false
         datapublic:
           type: boolean
-          required: false
         roadall:
-          required: false
           description: Like road but with an additional initial row consisting of [initday, initval, null] and an additional final row consisting of [goaldate, goalval, rate]
           type: array
           items:
@@ -602,14 +597,12 @@ components:
             maxItems: 3
         datasource:
           type: string
-          required: false
           default: manual
           description: 'one of {"api", "ifttt", "zapier", or clientname}. Default: none (i.e., "manual").'
         tags:
           type: array
           items:
             type: string
-          required: false
     Goal:
       type: object
       properties:
@@ -1005,39 +998,38 @@ components:
       type: object
       properties:
         value:
-          required: true
           type: number
         timestamp:
           type: integer
           description: The unix time (in seconds) of the datapoint.
-          required: false
+          nullable: true
         daystamp:
           type: string
           description: The date of the datapoint. Sometimes timestamps are surprising due to goal deadlines, so if you're looking at Beeminder data, you're probably interested in the daystamp.
           example: '20150831'
-          required: false
+          nullable: true
         comment:
           type: string
           description: An optional comment about the datapoint.
-          required: false
+          nullable: true
         requestId:
-          required: false
+          nullable: true
           type: string
           description: string to uniquely identify this datapoint (scoped to this goal. The same requestid can be used for different goals without being considered a duplicate). Clients can use this to verify that Beeminder received a datapoint (important for clients with spotty connectivity). Using requestids also means clients can safely resend datapoints without accidentally creating duplicates. If requestid is included and the datapoint is identical to the existing datapoint with that requestid then the datapoint will be ignored (the API will return "duplicate datapoint"). If requestid is included and the datapoint differs from the existing one with the same requestid then the datapoint will be updated. If no datapoint with the requestid exists then the datapoint is simply created. In other words, this is an upsert endpoint and requestid is an idempotency key.
     UpdateDatapointRequest:
       type: object
       properties:
         value:
-          required: false
           type: number
+          nullable: true
         timestamp:
           type: integer
           description: The unix time (in seconds) of the datapoint.
-          required: false
+          nullable: true
         comment:
           type: string
           description: An optional comment about the datapoint.
-          required: false
+          nullable: true
     Datapoint:
       type: object
       properties:
