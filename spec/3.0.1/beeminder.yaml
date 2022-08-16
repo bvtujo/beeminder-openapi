@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.1
 info:
   title: Beeminder
   version: '1.0'
@@ -37,7 +37,12 @@ paths:
             type: integer
           required: false
           description: Number of datapoints to receive, sorted by updated_at.
-
+        - in: query
+          name: redirect_to_url
+          schema:
+            type: string
+            format: url
+          description: Mutually exclusive with other parameters. Attempts to authenticate the user and if successful, redirects to the given URL.
       responses:
         '200':
           description: OK
@@ -46,15 +51,377 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/SmallUser'
+  /users/{userId}/goals.json:
+    get:
+      summary: Get user userId's goals, sorted in descending order of urgency.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          description: The username of the user to fetch goals from.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+    post:
+      summary: Create a new goal for user userId.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          description: The username of the user to fetch goals from.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
 
-  #  /users/{userId}/goals/{goalSlug}/datapoints.json:
-  #    get:
-  #    post:
-  #  /users/{userId}/goals/{goalSlug}/datapoints/create_all.json:
-  #    post:
-  #  /users/{userId}/goals/{goalSlug}/datapoints/{datapointId}.json:
-  #    put:
-  #    delete:
+  /users/{userId}/goals/archived.json:
+    get:
+      description: Get user userId's archived goals.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          description: The username of the user to fetch goals from.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+  /users/{userId}/goals/{goalSlug}.json:
+    get:
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID to fetch a goal from.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to fetch.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+
+    put:
+      summary: Update a goal for a user.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID to fetch a goal from.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to update.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalUpdateRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+  /users/{userId}/goals/{goalSlug}/refresh_graph.json:
+    get:
+      summary: Analagous to the refresh button on the goal page. Forces a refetch of autodata for goals with automatic data sources. Refreshes the graph image regardless. Please be extremely conservative with this endpoint!
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to refresh.
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /users/{userId}/goals/{goalSlug}/shortcircuit.json:
+    post:
+      summary: Increase the goal's pledge level and charge the user the amount of the current pledge.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to short circuit.
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+  /users/{userId}/goals/{goalSlug}/stepdown.json:
+    post:
+      summary: Decrease the goal's pledge level subject to the akrasia horizon; i.e. not immediately. After a successful request the goal will have a countdown to when it will revert to the lower pledge level.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to step down.
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+  /users/{userId}/goals/{goalSlug}/cancel_stepdown.json:
+    post:
+      summary: Cancel a pending stepdown of a goal's pledge. The pledge will remain at the current amount.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to cancel step down.
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+  /users/{userId}/goals/{goalSlug}/datapoints.json:
+    get:
+      summary: Get all the datapoints for userId's goal goalSlug. beeminder.com/u/g
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID from whose goals to fetch datapoints.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to fetch datapoints from.
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Which attribute to sort on. Defaults to 'id' if none given.
+          required: false
+        - in: query
+          name: count
+          schema:
+            type: integer
+          description: Limit results to count number of datapoints. Defaults to all datapoints if parameter is missing.
+          required: false
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Used to paginate results.
+        - in: query
+          name: per
+          schema:
+            type: integer
+          description: Number of results per page. Default 25. Ignored without page parameter.
+          required: false
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Datapoint'
+    post:
+      summary: add a new datapoint to userId's goal goalSlug.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to add a datapoint to.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatapointRequest'
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
+
+  /users/{userId}/goals/{goalSlug}/datapoints/create_all.json:
+    post:
+      summary: Add all new datapoints to userId's goal goalSlug.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal to add a datapoint to.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateDatapointRequest'
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Datapoint'
+  /users/{userId}/goals/{goalSlug}/datapoints/{datapointId}.json:
+    put:
+      summary: Update the datapoint with id.
+      parameters:
+          - in: path
+            name: userId
+            schema:
+              type: string
+            required: true
+            description: User ID.
+          - in: path
+            name: goalSlug
+            schema:
+              type: string
+            required: true
+            description: Name of the goal.
+          - in: path
+            name: datapointId
+            required: true
+            description: ID of the datapoint to edit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateDatapointRequest'
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
+    delete:
+      summary: Delete the datapoint with id.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User ID.
+        - in: path
+          name: goalSlug
+          schema:
+            type: string
+          required: true
+          description: Name of the goal.
+        - in: path
+          name: datapointId
+          required: true
+          description: ID of the datapoint to edit.
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
   /charges.json:
     post:
       summary: Create a new charge against a user.
@@ -134,7 +501,115 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Goal'
-
+    GoalCreateRequest:
+      description: Exactly two out of three of goaldate, goalval, and rate are required.
+      type: object
+      properties:
+        slug:
+          required: true
+          type: string
+          example: rapid
+          description: The final part of the URL of the goal, used as an identifier.
+        title:
+          required: true
+          type: string
+          example: play at least one game of rapid chess a day.
+        goal_type:
+          required: true
+          type: string
+          enum:
+            - hustler
+            - biker
+            - fatloser
+            - gainer
+            - inboxer
+            - drinker
+            - custom
+        gunits:
+          type: string
+          description: Goal units, like "hours" or "pushups" or "pages".
+          required: true
+        goaldate:
+          type: number
+          nullable: true
+          description: The end date (unix timestamp) of the goal.
+        goalval:
+          type: number
+          nullable: true
+          description: The number the bright red line will eventually reach.
+        rate:
+          type: number
+          nullable: true
+          description: The slope of the (final section of the) bright red line in runits.
+        initval:
+          type: number
+          description: The y-value of the start of the bright red line.
+          required: true
+        secret:
+          type: boolean
+          description: Whether you have to be logged in as owner of the goal to view it.
+          default: false
+          required: false
+        datapublic:
+          type: boolean
+          description: Whether you have to be logged in as the owner of the goal to view the datapoints
+          required: false
+        datasource:
+          type: string
+          required: false
+          default: manual
+          description: 'one of {"api", "ifttt", "zapier", or clientname}. Default: none (i.e., "manual").'
+        dryrun:
+          type: boolean
+          default: false
+          description: Pass this to test the endpoint without actually creating a goal. Defaults to false.
+        tags:
+          type: array
+          items:
+            type: string
+          required: false
+    GoalUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          required: false
+        yaxis:
+          type: string
+          required: false
+        tmin:
+          type: string
+          required: false
+        tmax:
+          type: string
+          required: false
+        secret:
+          type: boolean
+          required: false
+        datapublic:
+          type: boolean
+          required: false
+        roadall:
+          required: false
+          description: Like road but with an additional initial row consisting of [initday, initval, null] and an additional final row consisting of [goaldate, goalval, rate]
+          type: array
+          items:
+            type: array
+            minItems: 3
+            items:
+              type: number
+              nullable: true
+            maxItems: 3
+        datasource:
+          type: string
+          required: false
+          default: manual
+          description: 'one of {"api", "ifttt", "zapier", or clientname}. Default: none (i.e., "manual").'
+        tags:
+          type: array
+          items:
+            type: string
+          required: false
     Goal:
       type: object
       properties:
@@ -154,6 +629,7 @@ components:
           description: The number the bright red line will eventually reach.
         rate:
           type: number
+          nullable: true
           description: The slope of the (final section of the) bright red line in runits.
         goaldate:
           type: number
@@ -408,55 +884,35 @@ components:
         numpts:
           type: number
         road:
+          description: Array of tuples that can be used to construct the Bright Red Line (formerly "Yellow Brick Road"). This field is also known as the graph matrix. Each tuple specifies 2 out of 3 of [time, goal, rate]. To construct road, start with a known starting point (time, value) and then each row of the graph matrix specifies 2 out of 3 of {t,v,r} which gives the segment ending at time t. You can walk forward filling in the missing 1-out-of-3 from the (time, value) in the previous row.
           type: array
           items:
             type: array
-            prefixItems:
-              - type: number
-                nullable: true
-                description: Date of the end of the road segment.
-              - type: number
-                nullable: true
-                description: Value of the goal at the end of the segment.
-              - type: number
-                nullable: true
-                description: Rate of the goal in this segment in runits.
             minItems: 3
-            additionalItems: false
-            items: false
+            items:
+              type: number
+              nullable: true
+            maxItems: 3
         roadall:
           description: Like road but with an additional initial row consisting of [initday, initval, null] and an additional final row consisting of [goaldate, goalval, rate]
           type: array
           items:
             type: array
-            prefixItems:
-              - type: number
-                nullable: true
-                description: Date of the end of the road segment.
-              - type: number
-                nullable: true
-                description: Value of the goal at the end of the segment.
-              - type: number
-                nullable: true
-                description: Rate of the goal in this segment in runits.
             minItems: 3
-            additionalItems: false
-            items: false
+            items:
+              type: number
+              nullable: true
+            maxItems: 3
         fullroad:
           description: Like roadall but with the nulls filled in.
           type: array
           items:
             type: array
-            prefixItems:
-              - type: number
-                description: Date of the end of the road segment.
-              - type: number
-                description: Value of the goal at the end of the segment.
-              - type: number
-                description: Rate of the goal in this segment in runits.
             minItems: 3
-            additionalItems: false
-            items: false
+            items:
+              type: number
+              nullable: false
+            maxItems: 3
         secret:
           type: boolean
           description: Whether you have to be logged in as owner of the goal to view it.
@@ -467,16 +923,11 @@ components:
         mathishard:
           description: The goaldate, goalval, and rate — all filled in. (The commitment dial specifies 2 out of 3 and you can check this if you want Beeminder to do the math for you on inferring the third one.)
           type: array
-          prefixItems:
-            - type: number
-              description: Goaldate
-            - type: number
-              description: GoalVal
-            - type: number
-              description: Rate of the goal in this segment in runits.
           minItems: 3
-          additionalItems: false
-          items: false
+          items:
+            type: number
+            nullable: false
+          maxItems: 3
         headsum:
           deprecated: true
           type: string
@@ -550,7 +1001,43 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Datapoint'
-
+    CreateDatapointRequest:
+      type: object
+      properties:
+        value:
+          required: true
+          type: number
+        timestamp:
+          type: integer
+          description: The unix time (in seconds) of the datapoint.
+          required: false
+        daystamp:
+          type: string
+          description: The date of the datapoint. Sometimes timestamps are surprising due to goal deadlines, so if you're looking at Beeminder data, you're probably interested in the daystamp.
+          example: '20150831'
+          required: false
+        comment:
+          type: string
+          description: An optional comment about the datapoint.
+          required: false
+        requestId:
+          required: false
+          type: string
+          description: string to uniquely identify this datapoint (scoped to this goal. The same requestid can be used for different goals without being considered a duplicate). Clients can use this to verify that Beeminder received a datapoint (important for clients with spotty connectivity). Using requestids also means clients can safely resend datapoints without accidentally creating duplicates. If requestid is included and the datapoint is identical to the existing datapoint with that requestid then the datapoint will be ignored (the API will return "duplicate datapoint"). If requestid is included and the datapoint differs from the existing one with the same requestid then the datapoint will be updated. If no datapoint with the requestid exists then the datapoint is simply created. In other words, this is an upsert endpoint and requestid is an idempotency key.
+    UpdateDatapointRequest:
+      type: object
+      properties:
+        value:
+          required: false
+          type: number
+        timestamp:
+          type: integer
+          description: The unix time (in seconds) of the datapoint.
+          required: false
+        comment:
+          type: string
+          description: An optional comment about the datapoint.
+          required: false
     Datapoint:
       type: object
       properties:
