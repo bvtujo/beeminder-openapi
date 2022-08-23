@@ -2,11 +2,16 @@ openapi: 3.0.1
 info:
   title: Beeminder
   version: '1.0'
+  contact:
+    email: austinrossely@gmail.com
+    name: Austin Ely
+    url: "https://github.com/bvtujo"
 servers:
   - url: https://www.beeminder.com/api/v1
 paths:
   /users/{userId}.json:
     get:
+      operationId: GetUser
       parameters:
         - in: path
           name: userId
@@ -51,8 +56,10 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/SmallUser'
+                  - $ref: '#/components/schemas/BigUser'
   /users/{userId}/goals.json:
     get:
+      operationId: GetGoals
       summary: Get user userId's goals, sorted in descending order of urgency.
       parameters:
         - in: path
@@ -71,6 +78,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Goal'
     post:
+      operationId: CreateGoal
       summary: Create a new goal for user userId.
       parameters:
         - in: path
@@ -92,9 +100,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Goal'
-
   /users/{userId}/goals/archived.json:
     get:
+      operationId: GetArchivedGoals
       description: Get user userId's archived goals.
       parameters:
         - in: path
@@ -114,6 +122,7 @@ paths:
                   $ref: '#/components/schemas/Goal'
   /users/{userId}/goals/{goalSlug}.json:
     get:
+      operationId: GetGoal
       parameters:
         - in: path
           name: userId
@@ -134,8 +143,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Goal'
-
     put:
+      operationId: UpdateGoal
       summary: Update a goal for a user.
       parameters:
         - in: path
@@ -164,6 +173,7 @@ paths:
                 $ref: '#/components/schemas/Goal'
   /users/{userId}/goals/{goalSlug}/refresh_graph.json:
     get:
+      operationId: RefreshGraph
       summary: Analagous to the refresh button on the goal page. Forces a refetch of autodata for goals with automatic data sources. Refreshes the graph image regardless. Please be extremely conservative with this endpoint!
       parameters:
         - in: path
@@ -187,6 +197,7 @@ paths:
                 type: boolean
   /users/{userId}/goals/{goalSlug}/shortcircuit.json:
     post:
+      operationId: ShortCircuit
       summary: Increase the goal's pledge level and charge the user the amount of the current pledge.
       parameters:
         - in: path
@@ -210,6 +221,7 @@ paths:
                 $ref: '#/components/schemas/Goal'
   /users/{userId}/goals/{goalSlug}/stepdown.json:
     post:
+      operationId: StepDown
       summary: Decrease the goal's pledge level subject to the akrasia horizon; i.e. not immediately. After a successful request the goal will have a countdown to when it will revert to the lower pledge level.
       parameters:
         - in: path
@@ -233,6 +245,7 @@ paths:
                 $ref: '#/components/schemas/Goal'
   /users/{userId}/goals/{goalSlug}/cancel_stepdown.json:
     post:
+      operationId: CancelStepdown
       summary: Cancel a pending stepdown of a goal's pledge. The pledge will remain at the current amount.
       parameters:
         - in: path
@@ -256,6 +269,7 @@ paths:
                 $ref: '#/components/schemas/Goal'
   /users/{userId}/goals/{goalSlug}/datapoints.json:
     get:
+      operationId: GetDatapoints
       summary: Get all the datapoints for userId's goal goalSlug. beeminder.com/u/g
       parameters:
         - in: path
@@ -303,6 +317,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Datapoint'
     post:
+      operationId: CreateDatapoint
       summary: add a new datapoint to userId's goal goalSlug.
       parameters:
         - in: path
@@ -330,9 +345,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Datapoint'
-
   /users/{userId}/goals/{goalSlug}/datapoints/create_all.json:
     post:
+      operationId: CreateDatapoints
       summary: Add all new datapoints to userId's goal goalSlug.
       parameters:
         - in: path
@@ -366,6 +381,7 @@ paths:
                   $ref: '#/components/schemas/Datapoint'
   /users/{userId}/goals/{goalSlug}/datapoints/{datapointId}.json:
     put:
+      operationId: UpdateDatapoint
       summary: Update the datapoint with id.
       parameters:
         - in: path
@@ -402,6 +418,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Datapoint'
     delete:
+      operationId: DeleteDatapoint
       summary: Delete the datapoint with id.
       parameters:
         - in: path
@@ -431,6 +448,7 @@ paths:
                 $ref: '#/components/schemas/Datapoint'
   /charges.json:
     post:
+      operationId: CreateCharge
       summary: Create a new charge against a user.
       requestBody:
         required: true
@@ -1083,7 +1101,7 @@ components:
         dryrun:
           type: string
           enum: [true, false]
-          default: false
+          default: true
           description: If passed, the Charge is not actually created, but the JSON for it is returned as if it were.
     ChargeResponse:
       type: object

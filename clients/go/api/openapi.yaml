@@ -1,0 +1,1561 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: austinrossely@gmail.com
+    name: Austin Ely
+    url: https://github.com/bvtujo
+  title: Beeminder
+  version: "1.0"
+servers:
+- url: https://www.beeminder.com/api/v1
+security:
+- ApiKeyAuth: []
+paths:
+  /users/{userId}.json:
+    get:
+      operationId: GetUser
+      parameters:
+      - description: User ID to fetch
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Convenience method to fetch all information about a user. Use
+          sparingly.
+        explode: true
+        in: query
+        name: associations
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: "Send a Unix timestamp to receive a filtered list of the user's\
+          \ goals and datapoints. Only goals and datapoints that have been created\
+          \ or updated since the timestamp will be returned. Sending diff_since implies\
+          \ that you want the user's associations, so you don't need to send both."
+        explode: true
+        in: query
+        name: diff_since
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: Only get a subset of attributes and most recent datapoint. Must
+          be used together with `diff_since`.
+        explode: true
+        in: query
+        name: skinny
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: "Number of datapoints to receive, sorted by updated_at."
+        explode: true
+        in: query
+        name: datapoints_count
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: "Mutually exclusive with other parameters. Attempts to authenticate\
+          \ the user and if successful, redirects to the given URL."
+        explode: true
+        in: query
+        name: redirect_to_url
+        required: false
+        schema:
+          format: url
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUser_200_response'
+          description: OK
+  /users/{userId}/goals.json:
+    get:
+      operationId: GetGoals
+      parameters:
+      - description: The username of the user to fetch goals from.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Goal'
+                type: array
+          description: OK
+      summary: "Get user userId's goals, sorted in descending order of urgency."
+    post:
+      operationId: CreateGoal
+      parameters:
+      - description: The username of the user to fetch goals from.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalCreateRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: Created
+      summary: Create a new goal for user userId.
+  /users/{userId}/goals/archived.json:
+    get:
+      description: Get user userId's archived goals.
+      operationId: GetArchivedGoals
+      parameters:
+      - description: The username of the user to fetch goals from.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Goal'
+                type: array
+          description: OK
+  /users/{userId}/goals/{goalSlug}.json:
+    get:
+      operationId: GetGoal
+      parameters:
+      - description: User ID to fetch a goal from.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to fetch.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: OK
+    put:
+      operationId: UpdateGoal
+      parameters:
+      - description: User ID to fetch a goal from.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to update.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalUpdateRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: OK
+      summary: Update a goal for a user.
+  /users/{userId}/goals/{goalSlug}/refresh_graph.json:
+    get:
+      operationId: RefreshGraph
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to refresh.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: Accepted
+      summary: Analagous to the refresh button on the goal page. Forces a refetch
+        of autodata for goals with automatic data sources. Refreshes the graph image
+        regardless. Please be extremely conservative with this endpoint!
+  /users/{userId}/goals/{goalSlug}/shortcircuit.json:
+    post:
+      operationId: ShortCircuit
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to short circuit.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: Created
+      summary: Increase the goal's pledge level and charge the user the amount of
+        the current pledge.
+  /users/{userId}/goals/{goalSlug}/stepdown.json:
+    post:
+      operationId: StepDown
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to step down.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: Created
+      summary: Decrease the goal's pledge level subject to the akrasia horizon; i.e.
+        not immediately. After a successful request the goal will have a countdown
+        to when it will revert to the lower pledge level.
+  /users/{userId}/goals/{goalSlug}/cancel_stepdown.json:
+    post:
+      operationId: CancelStepdown
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to cancel step down.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+          description: Created
+      summary: Cancel a pending stepdown of a goal's pledge. The pledge will remain
+        at the current amount.
+  /users/{userId}/goals/{goalSlug}/datapoints.json:
+    get:
+      operationId: GetDatapoints
+      parameters:
+      - description: User ID from whose goals to fetch datapoints.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to fetch datapoints from.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Which attribute to sort on. Defaults to 'id' if none given.
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Limit results to count number of datapoints. Defaults to all
+          datapoints if parameter is missing.
+        explode: true
+        in: query
+        name: count
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: Used to paginate results.
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+        style: form
+      - description: Number of results per page. Default 25. Ignored without page
+          parameter.
+        explode: true
+        in: query
+        name: per
+        required: false
+        schema:
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Datapoint'
+                type: array
+          description: OK
+      summary: Get all the datapoints for userId's goal goalSlug. beeminder.com/u/g
+    post:
+      operationId: CreateDatapoint
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to add a datapoint to.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatapointRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
+          description: Created
+      summary: add a new datapoint to userId's goal goalSlug.
+  /users/{userId}/goals/{goalSlug}/datapoints/create_all.json:
+    post:
+      operationId: CreateDatapoints
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal to add a datapoint to.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/CreateDatapointRequest'
+              type: array
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Datapoint'
+                type: array
+          description: Created
+      summary: Add all new datapoints to userId's goal goalSlug.
+  /users/{userId}/goals/{goalSlug}/datapoints/{datapointId}.json:
+    delete:
+      operationId: DeleteDatapoint
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: ID of the datapoint to edit.
+        explode: false
+        in: path
+        name: datapointId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
+          description: Ok
+      summary: Delete the datapoint with id.
+    put:
+      operationId: UpdateDatapoint
+      parameters:
+      - description: User ID.
+        explode: false
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Name of the goal.
+        explode: false
+        in: path
+        name: goalSlug
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: ID of the datapoint to edit.
+        explode: false
+        in: path
+        name: datapointId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/UpdateDatapointRequest'
+              type: array
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Datapoint'
+          description: Ok
+      summary: Update the datapoint with id.
+  /charges.json:
+    post:
+      operationId: CreateCharge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargeRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeResponse'
+          description: Created
+      summary: Create a new charge against a user.
+components:
+  schemas:
+    SmallUser:
+      properties:
+        username:
+          type: string
+        timezone:
+          type: string
+        updated_at:
+          type: integer
+        created_at:
+          type: integer
+        urgency_load:
+          type: integer
+        deadbeat:
+          type: boolean
+        goals:
+          items:
+            type: string
+          type: array
+        has_authorized_fitbit:
+          type: boolean
+        default_leadtime:
+          type: integer
+        default_alertstart:
+          type: integer
+        default_deadline:
+          type: integer
+        subscription:
+          type: string
+      type: object
+    BigUser:
+      properties:
+        username:
+          type: string
+        timezone:
+          type: string
+        updated_at:
+          type: integer
+        created_at:
+          type: integer
+        urgency_load:
+          type: integer
+        deadbeat:
+          type: boolean
+        deleted_goals:
+          items:
+            $ref: '#/components/schemas/BigUser_deleted_goals_inner'
+          type: array
+        goals:
+          items:
+            $ref: '#/components/schemas/Goal'
+          type: array
+      type: object
+    GoalCreateRequest:
+      description: "Exactly two out of three of goaldate, goalval, and rate are required."
+      example:
+        goal_type: hustler
+        dryrun: false
+        secret: false
+        title: play at least one game of rapid chess a day.
+        gunits: gunits
+        tags:
+        - tags
+        - tags
+        initval: 5.962133916683182
+        goaldate: 0.8008281904610115
+        datapublic: true
+        rate: 1.4658129805029452
+        datasource: manual
+        goalval: 6.027456183070403
+        slug: rapid
+      properties:
+        slug:
+          description: "The final part of the URL of the goal, used as an identifier."
+          example: rapid
+          type: string
+        title:
+          example: play at least one game of rapid chess a day.
+          type: string
+        goal_type:
+          enum:
+          - hustler
+          - biker
+          - fatloser
+          - gainer
+          - inboxer
+          - drinker
+          - custom
+          type: string
+        gunits:
+          description: "Goal units, like \"hours\" or \"pushups\" or \"pages\"."
+          type: string
+        goaldate:
+          description: The end date (unix timestamp) of the goal.
+          nullable: true
+          type: number
+        goalval:
+          description: The number the bright red line will eventually reach.
+          nullable: true
+          type: number
+        rate:
+          description: The slope of the (final section of the) bright red line in
+            runits.
+          nullable: true
+          type: number
+        initval:
+          description: The y-value of the start of the bright red line.
+          type: number
+        secret:
+          default: false
+          description: Whether you have to be logged in as owner of the goal to view
+            it.
+          nullable: true
+          type: boolean
+        datapublic:
+          description: Whether you have to be logged in as the owner of the goal to
+            view the datapoints
+          nullable: true
+          type: boolean
+        datasource:
+          default: manual
+          description: "one of {\"api\", \"ifttt\", \"zapier\", or clientname}. Default:\
+            \ none (i.e., \"manual\")."
+          nullable: true
+          type: string
+        dryrun:
+          default: false
+          description: Pass this to test the endpoint without actually creating a
+            goal. Defaults to false.
+          nullable: true
+          type: boolean
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    GoalUpdateRequest:
+      example:
+        datapublic: true
+        tmax: tmax
+        datasource: manual
+        roadall:
+        - - 0.8008281904610115
+          - 0.8008281904610115
+          - 0.8008281904610115
+        - - 0.8008281904610115
+          - 0.8008281904610115
+          - 0.8008281904610115
+        tmin: tmin
+        secret: true
+        title: title
+        yaxis: yaxis
+        tags:
+        - tags
+        - tags
+      properties:
+        title:
+          type: string
+        yaxis:
+          type: string
+        tmin:
+          type: string
+        tmax:
+          type: string
+        secret:
+          type: boolean
+        datapublic:
+          type: boolean
+        roadall:
+          description: "Like road but with an additional initial row consisting of\
+            \ [initday, initval, null] and an additional final row consisting of [goaldate,\
+            \ goalval, rate]"
+          items:
+            items:
+              nullable: true
+              type: number
+            maxItems: 3
+            minItems: 3
+            type: array
+          type: array
+        datasource:
+          default: manual
+          description: "one of {\"api\", \"ifttt\", \"zapier\", or clientname}. Default:\
+            \ none (i.e., \"manual\")."
+          type: string
+        tags:
+          items:
+            type: string
+          type: array
+      type: object
+    Goal:
+      example:
+        integery: true
+        todayta: true
+        queued: true
+        delta: -0.8000000000000114
+        movingav: true
+        alertstart: 34200
+        dir: 7.457744773683766
+        headsum: "Red: bmndr.com/are/rapid is safe for ~0 days (beemergency!)"
+        losedate: 1660633199
+        gunits: gunits
+        roadstatuscolor: red
+        autodata: autodata
+        runits: d
+        baremintotal: "168"
+        maxflux: 7.386281948385884
+        road:
+        - - 4.965218492984954
+          - 4.965218492984954
+          - 4.965218492984954
+        - - 4.965218492984954
+          - 4.965218492984954
+          - 4.965218492984954
+        lost: true
+        won: true
+        last_datapoint:
+          daystamp: "20150831"
+          updated_at: 3
+          requestid: requestid
+          origin: origin
+          fulltext: fulltext
+          comment: comment
+          id: id
+          canonical: canonical
+          value: 6.438423552598547
+          timestamp: 9
+        rah: 8.762042012749001
+        aggday: last
+        steppy: true
+        id: 6232221b55c133314d918619
+        slug: rapid
+        safesum: +1 games (168) due by 3am
+        contract:
+          amount: 9.301444243932576
+          pending_at: 4.145608029883936
+          stepdown_amount: 3.616076749251911
+          pending_amount: 2.027123023002322
+        frozen: true
+        delta_text: +1 +2 +3
+        initday: 1647446400
+        panic: 54000
+        tags:
+        - tags
+        - tags
+        initval: 1.2315135367772556
+        datapublic: true
+        svg_url: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa.svg
+        leadtime: 5
+        use_defaults: true
+        goalval: 0.8008281904610115
+        limsumdays: +1 due by 03:00
+        graphsum: 167 on 2022.08.15 (126 datapoints in 153 days) targeting 3853 on
+          2032.09.16 (3685 more days) @ +1 / day
+        odom: true
+        thumb_url: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa-thumb.png
+        goal_type: hustler
+        datapoints:
+        - daystamp: "20150831"
+          updated_at: 3
+          requestid: requestid
+          origin: origin
+          fulltext: fulltext
+          comment: comment
+          id: id
+          canonical: canonical
+          value: 6.438423552598547
+          timestamp: 9
+        - daystamp: "20150831"
+          updated_at: 3
+          requestid: requestid
+          origin: origin
+          fulltext: fulltext
+          comment: comment
+          id: id
+          canonical: canonical
+          value: 6.438423552598547
+          timestamp: 9
+        kyoom: true
+        ephem: false
+        limsumdate: +1 due Mon night by 03:00am
+        tmax: tmax
+        description: description
+        curday: 1.0246457001441578
+        secret: false
+        title: play at least one game of rapid chess a day.
+        fullroad:
+        - - 9.965781217890562
+          - 9.965781217890562
+          - 9.965781217890562
+        - - 9.965781217890562
+          - 9.965781217890562
+          - 9.965781217890562
+        yaxis: cumulative total games
+        aura: true
+        lasttouch: 2022-08-15T02:37:49.000Z
+        weekends_off: true
+        callback_url: callback_url
+        goaldate: 1.4658129805029452
+        updated_at: 1660547396
+        rate: 6.027456183070403
+        rosy: true
+        deadline: -3600
+        burner: frontburner
+        lane: 2
+        recent_data:
+        - daystamp: daystamp
+          measured_at: measured_at
+          origin: origin
+          fulltext: fulltext
+          urtext: urtext
+          created_at: created_at
+          comment: comment
+          id:
+            $oid: $oid
+          canonical: canonical
+          value: 6.965117697638846
+        - daystamp: daystamp
+          measured_at: measured_at
+          origin: origin
+          fulltext: fulltext
+          urtext: urtext
+          created_at: created_at
+          comment: comment
+          id:
+            $oid: $oid
+          canonical: canonical
+          value: 6.965117697638846
+        tmin: tmin
+        mathishard:
+        - 6.683562403749608
+        - 6.683562403749608
+        - 6.683562403749608
+        healthkitmetric: healthkitmetric
+        safebump: 167.8
+        noisy: true
+        graph_url: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa.png
+        yaw: 5
+        lanewidth: 7.061401241503109
+        numpts: 1.1730742509559433
+        coasting: true
+        fineprint: "#autodialMax=2\r\n#autodialStrict"
+        curval: 1.4894159098541704
+        lastday: 6.84685269835264
+        plotall: true
+        roadall:
+        - - 5.025004791520295
+          - 5.025004791520295
+          - 5.025004791520295
+        - - 5.025004791520295
+          - 5.025004791520295
+          - 5.025004791520295
+        safebuf: 0
+        pledge: 9.369310271410669
+        dueby:
+          key:
+            total: 2.8841621266687802
+            formatted_total_for_beedroid: formatted_total_for_beedroid
+            formatted_delta_for_beedroid: formatted_delta_for_beedroid
+            delta: 1.284659006116532
+        limsum: +1 in 0 days (168)
+        hhmmformat: true
+        baremin: +1
+      properties:
+        slug:
+          description: "The final part of the URL of the goal, used as an identifier."
+          example: rapid
+          type: string
+        title:
+          example: play at least one game of rapid chess a day.
+          type: string
+        description:
+          description: Optional description.
+          type: string
+        goalval:
+          description: The number the bright red line will eventually reach.
+          nullable: true
+          type: number
+        rate:
+          description: The slope of the (final section of the) bright red line in
+            runits.
+          nullable: true
+          type: number
+        goaldate:
+          description: The end date (unix timestamp) of the goal.
+          nullable: true
+          type: number
+        svg_url:
+          example: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa.svg
+          type: string
+        graph_url:
+          example: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa.png
+          type: string
+        thumb_url:
+          example: https://bmndr.s3.amazonaws.com/uploads/7989a124-d420-4bcf-9a9c-c8d3680751aa-thumb.png
+          type: string
+        goal_type:
+          enum:
+          - hustler
+          - biker
+          - fatloser
+          - gainer
+          - inboxer
+          - drinker
+          - custom
+          type: string
+        autodata:
+          nullable: true
+          type: string
+        healthkitmetric:
+          type: string
+        losedate:
+          example: 1660633199
+          type: integer
+        deadline:
+          description: seconds by which the deadline differs from midnight
+          example: -3600
+          maximum: 21600
+          minimum: -61200
+          type: integer
+        leadtime:
+          description: Days before deadline before we start sending you reminders.
+          type: integer
+        alertstart:
+          description: Seconds after midight that we start sending you reminders.
+          example: 34200
+          type: integer
+        use_defaults:
+          type: boolean
+        id:
+          description: Unique hex identifier of goal
+          example: 6232221b55c133314d918619
+          type: string
+        ephem:
+          example: false
+          type: boolean
+        queued:
+          type: boolean
+        panic:
+          example: 54000
+          type: integer
+        updated_at:
+          example: 1660547396
+          type: integer
+        burner:
+          deprecated: true
+          enum:
+          - frontburner
+          - backburner
+          type: string
+        yaw:
+          description: Good side of the bright red line.
+          enum:
+          - -1
+          - 1
+          type: integer
+        lane:
+          deprecated: true
+          description: See LoseDate and SafeBuf
+          type: integer
+        lanewidth:
+          deprecated: true
+          type: number
+        delta:
+          description: Distance from the bright red line to today's datapoint
+          example: -0.8000000000000114
+          type: number
+        runits:
+          enum:
+          - "y"
+          - m
+          - w
+          - d
+          - h
+          example: d
+          type: string
+        limsum:
+          description: Summary of what you need to do eke by.
+          example: +1 in 0 days (168)
+          type: string
+        frozen:
+          description: Whether the goal is currently frozen and therefore must be
+            restarted before continuing to accept data.
+          type: boolean
+        lost:
+          description: Whether the goal is currently off track.
+          type: boolean
+        won:
+          description: Whether the goal has been successfully completed.
+          type: boolean
+        contract:
+          $ref: '#/components/schemas/Goal_contract'
+        delta_text:
+          deprecated: true
+          example: +1 +2 +3
+          type: string
+        safebump:
+          description: The absolute y-axis number you need to reach to get one additional
+            day of safety buffer.
+          example: 167.8
+          type: number
+        safesum:
+          example: +1 games (168) due by 3am
+          type: string
+        limsumdate:
+          example: +1 due Mon night by 03:00am
+          type: string
+        limsumdays:
+          example: +1 due by 03:00
+          type: string
+        baremin:
+          example: +1
+          type: string
+        baremintotal:
+          example: "168"
+          type: string
+        roadstatuscolor:
+          example: red
+          type: string
+        lasttouch:
+          example: 2022-08-15T02:37:49.000Z
+          type: string
+        safebuf:
+          description: The integer number of safe days. If it's a beemergency this
+            will be zero.
+          example: 0
+          type: number
+        coasting:
+          type: boolean
+        integery:
+          description: Assume that the units must be integer values. Used for things
+            like limsum.
+          type: boolean
+        fineprint:
+          description: The user-provided description of what exactly they are committing
+            to.
+          example: "#autodialMax=2\r\n#autodialStrict"
+          type: string
+        todayta:
+          description: Whether there are any datapoints for today
+          type: boolean
+        hhmmformat:
+          description: "Whether to show data in a \"timey\" way, with colons. For\
+            \ example, this would make a 1.5 show up as 1:30."
+          type: boolean
+        gunits:
+          description: "Goal units, like \"hours\" or \"pushups\" or \"pages\"."
+          type: string
+        weekends_off:
+          description: If the goal has weekends automatically scheduled.
+          type: boolean
+        yaxis:
+          description: "The label for the y-axis of the graph. E.g., \"Cumulative\
+            \ total hours\"."
+          example: cumulative total games
+          type: string
+        maxflux:
+          description: Max daily fluctuation for weight goals. Used as an absolute
+            buffer amount on recommit. Also shown on the graph as a thick guiding
+            line.
+          nullable: true
+          type: number
+        tmin:
+          description: Lower bound on x-axis; don't show data before this date; using
+            yyyy-mm-dd date format.
+          nullable: true
+          type: string
+        tmax:
+          description: Upper bound on x-axis; don't show data after this date; using
+            yyyy-mm-dd date format.
+          nullable: true
+          type: string
+        initday:
+          description: Unix timestamp (in seconds) of the start of the bright red
+            line.
+          example: 1647446400
+          type: integer
+        initval:
+          description: The y-value of the start of the bright red line.
+          type: number
+        curday:
+          description: "Unix timestamp (in seconds) of the end of the bright red line,\
+            \ i.e., the most recent (inferred) datapoint."
+          type: number
+        curval:
+          description: The value of the most recent datapoint.
+          type: number
+        lastday:
+          description: Unix timestamp (in seconds) of the last (explicitly entered)
+            datapoint.
+          type: number
+        dir:
+          description: "Direction the bright red line is sloping, usually the same\
+            \ as yaw."
+          enum:
+          - 1
+          - -1
+          type: number
+        kyoom:
+          description: "Cumulative; plot values as the sum of all those entered so\
+            \ far, aka auto-summing."
+          type: boolean
+        odom:
+          description: Treat zeros as accidental odometer resets.
+          type: boolean
+        noisy:
+          type: boolean
+        aggday:
+          description: "How to aggregate points on the same day, eg, min/max/mean."
+          enum:
+          - last
+          - first
+          - min
+          - max
+          - truemean
+          - uniqmean
+          - mean
+          - median
+          - mode
+          - trimmean
+          - sum
+          - jolly
+          - binary
+          - nonzero
+          - triangle
+          - square
+          - clocky
+          - count
+          - skatesum
+          - cap1
+          type: string
+        plotall:
+          description: "Whether to plot all the datapoints, or only the aggday'd one.\
+            \ So if false then only the official datapoint that's counted is plotted."
+          type: boolean
+        steppy:
+          description: Join dots with purple steppy-style line.
+          type: boolean
+        rosy:
+          description: Show the rose-colored dots and connecting line.
+          type: boolean
+        movingav:
+          description: Show moving average line superimposed on the data.
+          type: boolean
+        aura:
+          description: "Show turquoise swath, aka blue-green aura."
+          type: boolean
+        numpts:
+          type: number
+        road:
+          description: "Array of tuples that can be used to construct the Bright Red\
+            \ Line (formerly \"Yellow Brick Road\"). This field is also known as the\
+            \ graph matrix. Each tuple specifies 2 out of 3 of [time, goal, rate].\
+            \ To construct road, start with a known starting point (time, value) and\
+            \ then each row of the graph matrix specifies 2 out of 3 of {t,v,r} which\
+            \ gives the segment ending at time t. You can walk forward filling in\
+            \ the missing 1-out-of-3 from the (time, value) in the previous row."
+          items:
+            items:
+              nullable: true
+              type: number
+            maxItems: 3
+            minItems: 3
+            type: array
+          type: array
+        roadall:
+          description: "Like road but with an additional initial row consisting of\
+            \ [initday, initval, null] and an additional final row consisting of [goaldate,\
+            \ goalval, rate]"
+          items:
+            items:
+              nullable: true
+              type: number
+            maxItems: 3
+            minItems: 3
+            type: array
+          type: array
+        fullroad:
+          description: Like roadall but with the nulls filled in.
+          items:
+            items:
+              nullable: false
+              type: number
+            maxItems: 3
+            minItems: 3
+            type: array
+          type: array
+        secret:
+          default: false
+          description: Whether you have to be logged in as owner of the goal to view
+            it.
+          type: boolean
+        pledge:
+          description: Amount pledged (USD) on the goal.
+          type: number
+        mathishard:
+          description: "The goaldate, goalval, and rate — all filled in. (The commitment\
+            \ dial specifies 2 out of 3 and you can check this if you want Beeminder\
+            \ to do the math for you on inferring the third one.)"
+          items:
+            nullable: false
+            type: number
+          maxItems: 3
+          minItems: 3
+          type: array
+        headsum:
+          deprecated: true
+          description: Deprecated. Summary text blurb saying how much safety buffer
+            you have.
+          example: "Red: bmndr.com/are/rapid is safe for ~0 days (beemergency!)"
+          type: string
+        datapublic:
+          description: Whether you have to be logged in as the owner of the goal to
+            view the datapoints
+          type: boolean
+        graphsum:
+          deprecated: true
+          description: "Deprecated. Text summary of the graph, not used in the web\
+            \ UI anymore."
+          example: 167 on 2022.08.15 (126 datapoints in 153 days) targeting 3853 on
+            2032.09.16 (3685 more days) @ +1 / day
+          type: string
+        rah:
+          description: Red line value (y-value of the bright red line) at the akrasia
+            horizon (today plus one week).
+          type: number
+        last_datapoint:
+          $ref: '#/components/schemas/Datapoint'
+        callback_url:
+          description: "Callback URL.WARNING: If different apps change this they'll\
+            \ step on each other's toes."
+          nullable: true
+          type: string
+        tags:
+          description: A list of the goal's tags.
+          items:
+            type: string
+          type: array
+        recent_data:
+          items:
+            $ref: '#/components/schemas/Goal_recent_data_inner'
+          type: array
+        dueby:
+          additionalProperties:
+            $ref: '#/components/schemas/Goal_dueby_value'
+          type: object
+        datapoints:
+          items:
+            $ref: '#/components/schemas/Datapoint'
+          type: array
+      type: object
+    CreateDatapointRequest:
+      example:
+        daystamp: "20150831"
+        requestId: requestId
+        comment: comment
+        value: 0.8008281904610115
+        timestamp: 6
+      properties:
+        value:
+          type: number
+        timestamp:
+          description: The unix time (in seconds) of the datapoint.
+          nullable: true
+          type: integer
+        daystamp:
+          description: "The date of the datapoint. Sometimes timestamps are surprising\
+            \ due to goal deadlines, so if you're looking at Beeminder data, you're\
+            \ probably interested in the daystamp."
+          example: "20150831"
+          nullable: true
+          type: string
+        comment:
+          description: An optional comment about the datapoint.
+          nullable: true
+          type: string
+        requestId:
+          description: "string to uniquely identify this datapoint (scoped to this\
+            \ goal. The same requestid can be used for different goals without being\
+            \ considered a duplicate). Clients can use this to verify that Beeminder\
+            \ received a datapoint (important for clients with spotty connectivity).\
+            \ Using requestids also means clients can safely resend datapoints without\
+            \ accidentally creating duplicates. If requestid is included and the datapoint\
+            \ is identical to the existing datapoint with that requestid then the\
+            \ datapoint will be ignored (the API will return \"duplicate datapoint\"\
+            ). If requestid is included and the datapoint differs from the existing\
+            \ one with the same requestid then the datapoint will be updated. If no\
+            \ datapoint with the requestid exists then the datapoint is simply created.\
+            \ In other words, this is an upsert endpoint and requestid is an idempotency\
+            \ key."
+          nullable: true
+          type: string
+      type: object
+    UpdateDatapointRequest:
+      example:
+        comment: comment
+        value: 0.8008281904610115
+        timestamp: 6
+      properties:
+        value:
+          nullable: true
+          type: number
+        timestamp:
+          description: The unix time (in seconds) of the datapoint.
+          nullable: true
+          type: integer
+        comment:
+          description: An optional comment about the datapoint.
+          nullable: true
+          type: string
+      type: object
+    Datapoint:
+      example:
+        daystamp: "20150831"
+        updated_at: 3
+        requestid: requestid
+        origin: origin
+        fulltext: fulltext
+        comment: comment
+        id: id
+        canonical: canonical
+        value: 6.438423552598547
+        timestamp: 9
+      properties:
+        id:
+          description: "A unique ID, used to identify a datapoint when deleting or\
+            \ editing it."
+          type: string
+        timestamp:
+          description: The unix time (in seconds) of the datapoint.
+          type: integer
+        canonical:
+          description: The canonical "data entry format" of the datapoint.
+          nullable: true
+          type: string
+        daystamp:
+          description: "The date of the datapoint. Sometimes timestamps are surprising\
+            \ due to goal deadlines, so if you're looking at Beeminder data, you're\
+            \ probably interested in the daystamp."
+          example: "20150831"
+          type: string
+        value:
+          description: "The value, e.g., how much you weighed on the day indicated\
+            \ by the timestamp."
+          type: number
+        comment:
+          description: An optional comment about the datapoint.
+          nullable: true
+          type: string
+        updated_at:
+          description: The unix time that this datapoint was entered or last updated.
+          type: integer
+        requestid:
+          description: "If a datapoint was created via the API and this parameter\
+            \ was included, it will be echoed back."
+          nullable: true
+          type: string
+        origin:
+          description: Parameter for datapoint representation in goals
+          type: string
+        fulltext:
+          type: string
+      type: object
+    ChargeRequest:
+      description: The HTTP POST schema to create a charge.
+      example:
+        note: note
+        amount: 0.8008281904610115
+        dryrun: "true"
+        user_id: user_id
+      properties:
+        user_id:
+          description: Username of the user who is getting charged.
+          type: string
+        amount:
+          description: The amount of the charge.
+          type: number
+        note:
+          description: An optional note describing the charge.
+          type: string
+        dryrun:
+          default: "true"
+          description: "If passed, the Charge is not actually created, but the JSON\
+            \ for it is returned as if it were."
+          enum:
+          - "true"
+          - "false"
+          type: string
+      type: object
+    ChargeResponse:
+      description: Beeminder provides an endpoint to charge an arbitrary amount to
+        a Beeminder user. The user is inferred from the access_token or auth_token
+        provided.
+      example:
+        note: note
+        amount: 0.8008281904610115
+        user_id: user_id
+        id: id
+      properties:
+        id:
+          description: The unique ID of the charge.
+          type: string
+        amount:
+          description: The amount of the charge.
+          type: number
+        note:
+          description: An optional note describing the charge.
+          type: string
+        user_id:
+          description: The user id this charge was applied to.
+          type: string
+      type: object
+    GetUser_200_response:
+      oneOf:
+      - $ref: '#/components/schemas/SmallUser'
+      - $ref: '#/components/schemas/BigUser'
+    BigUser_deleted_goals_inner:
+      properties:
+        id:
+          type: string
+      type: object
+    Goal_contract:
+      example:
+        amount: 9.301444243932576
+        pending_at: 4.145608029883936
+        stepdown_amount: 3.616076749251911
+        pending_amount: 2.027123023002322
+      properties:
+        amount:
+          type: number
+        stepdown_amount:
+          nullable: true
+          type: number
+        pending_amount:
+          nullable: true
+          type: number
+        pending_at:
+          nullable: true
+          type: number
+      type: object
+    Goal_recent_data_inner_id:
+      example:
+        $oid: $oid
+      properties:
+        $oid:
+          type: string
+      type: object
+    Goal_recent_data_inner:
+      example:
+        daystamp: daystamp
+        measured_at: measured_at
+        origin: origin
+        fulltext: fulltext
+        urtext: urtext
+        created_at: created_at
+        comment: comment
+        id:
+          $oid: $oid
+        canonical: canonical
+        value: 6.965117697638846
+      properties:
+        id:
+          $ref: '#/components/schemas/Goal_recent_data_inner_id'
+        fulltext:
+          type: string
+        canonical:
+          type: string
+        origin:
+          type: string
+        urtext:
+          nullable: true
+          type: string
+        measured_at:
+          type: string
+        created_at:
+          type: string
+        comment:
+          type: string
+        value:
+          type: number
+        daystamp:
+          type: string
+      type: object
+    Goal_dueby_value:
+      example:
+        total: 2.8841621266687802
+        formatted_total_for_beedroid: formatted_total_for_beedroid
+        formatted_delta_for_beedroid: formatted_delta_for_beedroid
+        delta: 1.284659006116532
+      properties:
+        delta:
+          type: number
+        total:
+          type: number
+        formatted_delta_for_beedroid:
+          type: string
+        formatted_total_for_beedroid:
+          type: string
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      in: query
+      name: auth_token
+      type: apiKey
