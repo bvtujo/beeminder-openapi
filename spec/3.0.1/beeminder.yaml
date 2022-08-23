@@ -2,10 +2,6 @@ openapi: 3.0.1
 info:
   title: Beeminder
   version: '1.0'
-  contact:
-    email: austinrossely@gmail.com
-    name: Austin Ely
-    url: "https://github.com/bvtujo"
 servers:
   - url: https://www.beeminder.com/api/v1
 paths:
